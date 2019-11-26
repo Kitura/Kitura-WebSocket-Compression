@@ -200,7 +200,6 @@ private extension z_stream {
             rc = deflate(&self, flag)
             return typedOutputPtr.count - Int(self.avail_out)
         }
-
         return rc
     }
 }
