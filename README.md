@@ -41,25 +41,26 @@ In [Kitura-NIO](https://github.com/IBM-Swift/Kitura-NIO), we start the HTTP serv
 
  - Inbound channel handler pipeline:
 
-    *(Operating System)*
-         \|
-    `NIOSSLServerHandler`
-         \|
-    `HTTPDecoder`
-         \|
-    `HTTPRequestHandler`
-         \|
-    *(Kitura/WebSocket app)*
-    
- - Outbound channel handler pipeline: 
+    *(Operating System)*   
+            \|      
+       `NIOSSLServerHandler`    
+            \|  
+       `HTTPDecoder`     
+            \|  
+       `HTTPRequestHandler`    
+            \|   
+       *(Kitura/WebSocket app)*  
+       
+    - Outbound channel handler pipeline: 
 
-    *(Kitura/WebSocket app)*
-    \|
-    `HTTPEncoder`
-    \|
-    `NIOSSLServerHandler`
-    \|
-    *(Operating System)*
+       *(Kitura/WebSocket app)*  
+       \|  
+       `HTTPEncoder`  
+       \|  
+       `NIOSSLServerHandler`  
+       \|  
+       *(Operating System)*   
+
 
 [HTTPDecoder](https://apple.github.io/swift-nio/docs/current/NIOHTTP1/Classes/HTTPDecoder.html) and [HTTPResponseEncoder](https://apple.github.io/swift-nio/docs/current/NIOHTTP1/Classes/HTTPResponseEncoder.html) convert bytes to HTTP requests, and responses to bytes, respectively. [NIOSSLServerHandler](https://apple.github.io/swift-nio-ssl/docs/current/NIOSSL/Classes/NIOSSLServerHandler.html) is a duplex handler (both inbound and outbound) used to decrypt and encrypt data on a secure connection. The [HTTPRequestHandler](https://github.com/IBM-Swift/Kitura-NIO/blob/master/Sources/KituraNet/HTTP/HTTPRequestHandler.swift) is used to invoke Kitura's router.
 
@@ -75,29 +76,30 @@ Additionally, `Kitura-WebSocket-NIO` makes the following changes to the pipeline
  The pipelines now look like:
  - Inbound pipeline:
  
-   *(Operating System)*
-    \|
-   `NIOSSLServerHandler`
-    \|
-   `WebSocketFrameDecoder`
-    \|
-   `WebSocketDecompressor`
-    \|
-   `WebSocketConnection`
-    \|
-   *(Kitura/WebSocket application)*
+   *(Operating System)*  
+      \|  
+     `NIOSSLServerHandler`  
+      \|   
+     `WebSocketFrameDecoder`  
+      \|  
+     `PermessageDeflateDecompressor`  
+      \|  
+     `WebSocketConnection`  
+      \|  
+     *(Kitura/WebSocket application)*
 
- - Outbound pipeline:
- 
-   *(Kitura/WebSocket application)*
-    \|
-   `WebSocketCompressor`
-    \|
-   `WebSocketFrameEncoder`
-    \|
-   `NIOSSLServerHandler`
-    \|
-   *(Operating System)*
+   - Outbound pipeline:  
+   
+     *(Kitura/WebSocket application)*  
+      \|  
+     `PermessageDeflaterCompressor`    
+      \|  
+     `WebSocketFrameEncoder`      
+      \|  
+     `NIOSSLServerHandler`  
+      \|  
+     *(Operating System)*    
+   
  
  [WebSocketCompressor](https://github.com/IBM-Swift/Kitura-WebSocket-Compression/blob/master/Sources/WebSocketCompression/WebSocketCompressor.swift) is an outbound handler used to compress outbound WebSocket messages. [WebSocketDecompressor](https://github.com/IBM-Swift/Kitura-WebSocket-Compression/blob/master/Sources/WebSocketCompression/WebSocketDecompressor.swift) is an inbound handler used to decompress inbound WebSocket messages. Every WebSocket connection where a compression was negotiated, gets its own (`WebSocketCompressor`, `WebSocketDecompressor`) pair.
  These handlers currently use `permessage-deflate` for compression.
