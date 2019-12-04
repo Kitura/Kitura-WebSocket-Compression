@@ -9,11 +9,11 @@ This document discusses the implementation of WebSocket Compression in [Kitura-W
 This document assumes the reader is aware of the fundamentals of the [WebSocket protocol](https://tools.ietf.org/html/rfc6455).
 
 ### Table of contents
-1. [Usage](https://github.com/IBM-Swift/Kitura-WebSocket-Compression#1-usage)
-2. [WebSocket extensions](https://gist.github.com/pushkarnk/aea1be88c7c7283fcfe4615df35ed857#1-websocket-extensions)
-3. [WebSocket compression - the `permessage-deflate` algorithm](https://gist.github.com/pushkarnk/aea1be88c7c7283fcfe4615df35ed857#2-the-permessage-deflate-algorithm)
-4. [An implementation of permessage-deflate based on SwiftNIO](https://gist.github.com/pushkarnk/aea1be88c7c7283fcfe4615df35ed857#3-an-implementation-of-permessage-deflate-based-on-swift-nio)
-5. [Developer notes](https://gist.github.com/pushkarnk/aea1be88c7c7283fcfe4615df35ed857#4-developer-notes)
+1. [Usage](README.d#1-usage)
+2. [WebSocket extensions](README.md#2-websocket-extensions)
+3. [WebSocket compression - the `permessage-deflate` algorithm](README.md#3-the-permessage-deflate-algorithm)
+4. [An implementation of permessage-deflate based on SwiftNIO](README.md#4-an-implementation-of-permessage-deflate-based-on-swift-nio)
+5. [Developer notes](README.md#5-developer-notes)
 
 ### 1. Usage
 
