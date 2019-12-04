@@ -9,7 +9,7 @@ This document discusses the implementation of WebSocket Compression in [Kitura-W
 This document assumes the reader is aware of the fundamentals of the [WebSocket protocol](https://tools.ietf.org/html/rfc6455).
 
 ### Table of contents
-1. [Usage](README.d#1-usage)
+1. [Usage](README.md#1-usage)
 2. [WebSocket extensions](README.md#2-websocket-extensions)
 3. [WebSocket compression - the `permessage-deflate` algorithm](README.md#3-the-permessage-deflate-algorithm)
 4. [An implementation of permessage-deflate based on SwiftNIO](README.md#4-an-implementation-of-permessage-deflate-based-on-swift-nio)
