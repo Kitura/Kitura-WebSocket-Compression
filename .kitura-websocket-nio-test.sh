@@ -24,7 +24,7 @@ swift build
 
 # Edit package Kitura-WebSocket-Compression to point to the current branch
 echo ">> Editing Kitura package to use latest Kitura-WebSocket-Compression"
-swift package edit Kitura-WebSocket-Compression --path ../Kitura-WebSocket-Compression
+swift package edit WebSocketCompression --path ../Kitura-WebSocket-Compression
 travis_end
 set +e
 
