@@ -90,6 +90,10 @@ public class PermessageDeflateCompressor: Deflater {
 
         return outputBuffer
     }
+
+    public func end() {
+        deflateEnd(&stream)
+    }
 }
 
 // Implementation of a deflater using zlib. This class acts like an interceptor, consuming original frames from
@@ -155,6 +159,10 @@ public class PermessageDeflateDecompressor: Inflater {
         } while stream.avail_in > 0
         return outputBuffer
     }
+
+    public func end() {
+        inflateEnd(&stream)
+    }
 }
 
 // This code is borrowed from swift-nio: https://github.com/apple/swift-nio/blob/master/Sources/NIOHTTP1/HTTPResponseCompressor.swift
@@ -192,7 +200,7 @@ private extension z_stream {
     private mutating func deflateToBuffer(buffer: inout ByteBuffer, flag: Int32) -> Int32 {
         var rc = Z_OK
 
-        buffer.writeWithUnsafeMutableBytes { outputPtr in
+        buffer.writeWithUnsafeMutableBytes(minimumWritableBytes: 0) { outputPtr in
             let typedOutputPtr = UnsafeMutableBufferPointer(start: outputPtr.baseAddress!.assumingMemoryBound(to: UInt8.self),
                                                             count: outputPtr.count)
             self.avail_out = UInt32(typedOutputPtr.count)
@@ -228,7 +236,7 @@ extension z_stream {
     private mutating func inflateToBuffer(buffer: inout ByteBuffer, flag: Int32) -> Int32 {
         var rc = Z_OK
 
-        buffer.writeWithUnsafeMutableBytes { outputPtr in
+        buffer.writeWithUnsafeMutableBytes(minimumWritableBytes: 0) { outputPtr in
             let typedOutputPtr = UnsafeMutableBufferPointer(start: outputPtr.baseAddress!.assumingMemoryBound(to: UInt8.self),
                                                             count: outputPtr.count)
             self.avail_out = UInt32(typedOutputPtr.count)

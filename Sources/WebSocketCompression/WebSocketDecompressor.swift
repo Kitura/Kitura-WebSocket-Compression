@@ -53,7 +53,7 @@ public class WebSocketDecompressor : ChannelInboundHandler {
         guard frame.isCompressedDataFrame || (frame.isContinuationFrame && self.receivingCompressedMessage) else {
             // If we are using context takeover, this is a good time to free the zstream!
             if inflater.streamInitialized && frame.opcode == .connectionClose && !inflater.noContextTakeOver {
-                deflateEnd(&inflater.stream)
+                inflater.end()
                 inflater.streamInitialized = false
             }
 

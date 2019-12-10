@@ -77,7 +77,7 @@ public class WebSocketCompressor : ChannelOutboundHandler {
         // WebSocketConnection decides to close the connection, the close message
         // needs to be intercepted and the deflater closed while we're using context takeover.
         if deflater.noContextTakeOver == false {
-            deflateEnd(&deflater.stream)
+            deflater.end()
         }
         context.close(mode: mode, promise: promise)
     }
