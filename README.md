@@ -9,17 +9,40 @@ This document discusses the implementation of WebSocket Compression in [Kitura-W
 This document assumes the reader is aware of the fundamentals of the [WebSocket protocol](https://tools.ietf.org/html/rfc6455).
 
 ### Table of contents
-1. [WebSocket extensions](https://gist.github.com/pushkarnk/aea1be88c7c7283fcfe4615df35ed857#1-websocket-extensions)
-2. [WebSocket compression - the `permessage-deflate` algorithm](https://gist.github.com/pushkarnk/aea1be88c7c7283fcfe4615df35ed857#2-the-permessage-deflate-algorithm)
-3. [An implementation of permessage-deflate based on SwiftNIO](https://gist.github.com/pushkarnk/aea1be88c7c7283fcfe4615df35ed857#3-an-implementation-of-permessage-deflate-based-on-swift-nio)
-4. [Developer notes](https://gist.github.com/pushkarnk/aea1be88c7c7283fcfe4615df35ed857#4-developer-notes)
+1. [Usage](README.md#1-usage)
+2. [WebSocket extensions](README.md#2-websocket-extensions)
+3. [WebSocket compression - the `permessage-deflate` algorithm](README.md#3-the-permessage-deflate-algorithm)
+4. [An implementation of permessage-deflate based on SwiftNIO](README.md#4-an-implementation-of-permessage-deflate-based-on-swift-nio)
+5. [Developer notes](README.md#5-developer-notes)
 
-### 1. WebSocket extensions
+### 1. Usage
+
+#### Add dependencies
+
+Add the `Kitura-WebSocket-Compression` package to the dependencies within your application’s `Package.swift` file. Substitute `"x.x.x"` with the latest `Kitura-WebSocket-Compression` [release](https://github.com/IBM-Swift/Kitura-WebSocket-Compression/releases).
+
+```swift
+.package(url: "https://github.com/IBM-Swift/Kitura-WebSocket-Compression.git", from: "x.x.x")
+```
+
+Add `Kitura-WebSocket-Compression` to your target's dependencies:
+
+```swift
+.target(name: "example", dependencies: ["WebSocketCompression"]),
+```
+
+#### Import package
+
+  ```swift
+  import WebSocketCompression
+  ```
+
+### 2. WebSocket extensions
 The WebSocket protocol has a provision for servers to configure protocol extensions, and for clients to request these extensions from the servers. A client notifies about extensions it is interested in through a `negotiation offer` using the `Sec-WebSocket-Extension` header. A server may or may not support the extensions requested by the client. Through a `negotiation response`, the server notifies the client of the extensions that the server agrees upon. Negotiation offers and responses may also include extension-specific parameters. Once an extension is agreed upon, the client and server must invoke the extension from their respective WebSocket implementations.
 
 WebSocket compression is a WebSocket extension.
 
-### 2. WebSocket Compression: the permessage-deflate algorithm
+### 3. WebSocket Compression: the permessage-deflate algorithm
 Permessage-deflate is a WebSocket extension defined by [RFC7692](https://tools.ietf.org/html/rfc7692) which provides a specification for the compression functionality. It defines the negotiation process and a compression algorithm called `DEFLATE`. Like any WebSocket extension, the permessage-deflate negotiation comprises of an offer and a response.
 
 ###### The permessage-deflate negotiation offer
@@ -34,7 +57,7 @@ A permessage-deflate negotiation response has a mandatory `permessage-deflate` s
 
 The specification also discusses the DEFLATE algorithm. We utilize the [zlib compression library](https://www.zlib.net) for doing raw compression and decompression. A pair, comprising of a compressor and a decompressor, must be set up at both the ends of the connection. The server's decompressor decompresses messages compressed by the client's compressor and vice versa.
 
-### 3. An implementation of permessage-deflate based on SwiftNIO
+### 4. An implementation of permessage-deflate based on SwiftNIO
 The [SwiftNIO](https://github.com/apple/swift-nio) framework provides an API which enables HTTP/WebSocket server implementations to view the processing of data, that has been read from or written to sockets, as a sequence of transformations that happen through a pipeline of handlers. An active connection is represented by a `Channel`. Data which is read from, or written to, a channel moves through a `ChannelPipeline` of inbound and outbound `ChannelHandlers`. An `EventLoop` is associated with every `Channel`. An `EventLoop` is a thread-safe abstraction of a thread and provides features for asynchronous code execution using `EventLoopFutures` and `EventLoopPromises`.
 
 In [Kitura-NIO](https://github.com/IBM-Swift/Kitura-NIO), we start the HTTP server with the pipeline configured by SwiftNIO, adding Kitura-NIO's `HTTPRequestHandler` at the end. A view of the inbound and outbound pipelines (with some handlers omitted for simplicity) is this:
@@ -111,7 +134,7 @@ Additionally, `Kitura-WebSocket-NIO` makes the following changes to the pipeline
 
 Outbound WebSocket frames first reach the `WebSocketCompressor` which compresses the data held within them and relays them to the [WebSocketEncoder](https://apple.github.io/swift-nio/docs/current/NIOWebSocket/Classes/WebSocketFrameEncoder.html). Here the frames are marshalled into raw bytes to be written to the wire after encryption.
 
-#### 3.1 Compressor implementation
+#### 4.1 Compressor implementation
 The compressor is called `WebSocketCompressor`. It is a [ChannelOutboundHandler](https://apple.github.io/swift-nio/docs/current/NIO/Protocols/ChannelOutboundHandler.html).
 
 `ChannelOutboundHandler`'s `write(context:data:promise)` method implemented here gets invoked when the previous outbound handler (`WebSocketConnection`) writes data to the channel. Here, only data frames and continuation frames are processed. A WebSocket message is either available in a single data frame or a data frame followed by sequence of continuation frames.
@@ -120,17 +143,17 @@ The compressor makes sure that we have all the data pertaining to a message accu
 
 This library currently implements  `zlib`'s  deflater `PermessageDeflateCompressor` which is passed as an argument to `WebSocketCompressor` for compression
 
-#### 3.2 Decompressor implementation
+#### 4.2 Decompressor implementation
 The decompressor is, functionally, a mirror image of the compressor. It is called `WebSocketDeCompressor` and is a [ChannelInboundHandler](https://apple.github.io/swift-nio/docs/current/NIO/Protocols/ChannelInboundHandler.html).
 
 `ChannelInboundHandler`'s `channelRead(context:data)` method implemented here is invoked whenever a new `WebSocketFrame` is produced by the `WebSocketDecoder`. Similar to the compressor, the decompressor processes data and continuation frames only. All the data pertaining to a message, possibly spread across continuation frames, is accumulated and the inflater is invoked. The inflated data is then packed into a new `WebSocketFrame` and moved into the next handler in the pipeline.
 
 This library currently implements  `zlib`'s  inflater `PermessageDeflateDeCompressor` which is passed as an argument to `WebSocketDeCompressor` for decompression
 
-#### 3.3 Configuring the Compressor and Decompressor
+#### 4.3 Configuring the Compressor and Decompressor
 [RFC7692](https://tools.ietf.org/html/rfc7692) defines four configuration options. They are actually two pairs of option, one each for the client and the server:
 
-###### 3.3.1 `client_no_context_takeover` and `server_no_context_takeover`
+###### 4.3.1 `client_no_context_takeover` and `server_no_context_takeover`
 These allow the client and server to use a new zlib inflater or deflater on every message. By default we reuse the inflater and deflater instances across messages. This means the inflater and deflater are initialized only once. The memory allocation/deallocation happens only once and the history of the deflate/inflate stream can be reused. [Here](https://tools.ietf.org/html/rfc7692#section-7.2.3.2) is an example.
 
 In the `Kitura-WebSocket-NIO` implementation:
@@ -138,14 +161,14 @@ In the `Kitura-WebSocket-NIO` implementation:
  - a client can request the server to not use context takeover by sending the `server_no_context_takeover` extension parameter. The server will regard this request and configure its compressor to not use context takeover. It will add the `server_no_context_takeover` parameter in the response.
  - by default the server will configure its compressor and decompressor to use context takeover i.e. to reuse compression context
 
-###### 3.3.2 `client_max_window_bits` and `server_max_window_bits`
+###### 4.3.2 `client_max_window_bits` and `server_max_window_bits`
 These allow the client and server to share the LZ77 sliding window size. The default value is 15 bits which represents a window size of 32768 (2^15). The client's compressor and the server's decompressor must have the same LZ77 window size. The same restriction applies to the server's compressor and the client's decompressor.
 
 In the `Kitura-WebSocket-NIO` implementation:
 - a client can inform the server of its compressor's LZ77 window size using the `client_max_window_bits` extension parameter. If the parameter has a valid value, the server will configure its decompressor accordingly and send the same extension parameter in the response, indicating an agreement.
 - a client can also request the server to use a particular  LZ77 window size using the `server_max_window_bits` extension parameter. If the value is valid, the server will configure its compressor accordingly and send the same extension parameter in the response, indicating an agreement.
 
-### 4. Developer notes
+### 5. Developer notes
 1. The `PermessageDeflateCompressor` and `PermessageDeflaterDecompressor` both consolidate multi-frame messages into a single frame. This loss of framing information may not be serious in typical use-cases. But there may be applications where framing information has to be maintained.
 
 2. As mentioned in one of the examples [here](https://tools.ietf.org/html/rfc7692#section-7.1.3), a client may supply fallback negotiation offers, in case negotiation fails. `Kitura-WebSocket-NIO` hasn't implemented this. We make sure every offer goes through.
