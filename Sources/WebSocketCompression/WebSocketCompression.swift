@@ -17,34 +17,38 @@
 import NIO
 import CZlib
 
-// Protocol for Deflater
-
+/// A general deflater used by the WebSocket protocol
 public protocol Deflater {
+    /// Is the compression context saved and carried over to subsequent compression operations?
     var noContextTakeOver: Bool { get }
+
+    /// If compression context is saved, how long is the compression history window?
     var maxWindowBits: Int32 { get }
 
-    // The zlib stream
-    var stream: z_stream { get set }
+    /// Indicates if the deflater is initialized 
+    var initialized: Bool { get set }
 
-    // Initialize the z_stream only once if context takeover is enabled
-    var streamInitialized: Bool { get set }
-
+    /// Deflate data in the input ByteBuffer and return the compressed data in a new ByteBuffer
     func deflatePayload(in buffer: ByteBuffer, allocator: ByteBufferAllocator, dropFourTrailingOctets: Bool) -> ByteBuffer
 
+    /// Free the compression stream state
+    func end()
 }
 
-// Protocol for Deflater
-
+/// A general inflater used by the WebSocket protocol
 public protocol Inflater {
+    /// Is the compression context saved and carried over to subsequent compression operations?
     var noContextTakeOver: Bool { get }
+
+    /// If compression context is saved, how long is the compression history window?
     var maxWindowBits: Int32 { get }
 
-    // The zlib stream
-    var stream: z_stream { get set }
+    /// Indicates if the inflater is initialized 
+    var initialized: Bool { get set }
 
-    // Initialize the z_stream only once if context takeover is enabled
-    var streamInitialized: Bool { get set }
-
+    /// Inflate data in the input ByteBuffer and return the decompressed data in a new ByteBuffer
     func inflatePayload(in buffer: ByteBuffer, allocator: ByteBufferAllocator) -> ByteBuffer
 
+    /// Free the decompression stream state
+    func end()
 }

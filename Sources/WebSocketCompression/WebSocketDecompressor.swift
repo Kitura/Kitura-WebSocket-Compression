@@ -52,9 +52,9 @@ public class WebSocketDecompressor : ChannelInboundHandler {
         // We should either have a data frame with rsv1 set, or a continuation frame of a compressed message. There's nothing to do otherwise.
         guard frame.isCompressedDataFrame || (frame.isContinuationFrame && self.receivingCompressedMessage) else {
             // If we are using context takeover, this is a good time to free the zstream!
-            if inflater.streamInitialized && frame.opcode == .connectionClose && !inflater.noContextTakeOver {
-                deflateEnd(&inflater.stream)
-                inflater.streamInitialized = false
+            if inflater.initialized && frame.opcode == .connectionClose && !inflater.noContextTakeOver {
+                inflater.end()
+                inflater.initialized = false
             }
 
             context.fireChannelRead(self.wrapInboundOut(frame))

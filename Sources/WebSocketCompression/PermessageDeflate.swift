@@ -32,14 +32,14 @@ public class PermessageDeflateCompressor: Deflater {
     }
 
     // The zlib stream
-    public var stream: z_stream = z_stream()
+    private var stream: z_stream = z_stream()
 
     // Initialize the z_stream only once if context takeover is enabled
-    public var streamInitialized = false
+    public var initialized = false
 
     public func deflatePayload(in buffer: ByteBuffer, allocator: ByteBufferAllocator, dropFourTrailingOctets: Bool = false) -> ByteBuffer {
         // Initialize the deflater as per https://www.zlib.net/zlib_how.html
-        if noContextTakeOver || streamInitialized == false {
+        if noContextTakeOver || initialized == false {
             stream.zalloc = nil
             stream.zfree = nil
             stream.opaque = nil
@@ -49,7 +49,7 @@ public class PermessageDeflateCompressor: Deflater {
             let rc = deflateInit2_(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, -self.maxWindowBits, 8,
                                    Z_DEFAULT_STRATEGY, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size))
             precondition(rc == Z_OK, "Unexpected return from zlib init: \(rc)")
-            self.streamInitialized = true
+            self.initialized = true
         }
 
         defer {
@@ -90,6 +90,10 @@ public class PermessageDeflateCompressor: Deflater {
 
         return outputBuffer
     }
+
+    public func end() {
+        deflateEnd(&stream)
+    }
 }
 
 // Implementation of a deflater using zlib. This class acts like an interceptor, consuming original frames from
@@ -100,9 +104,9 @@ public class PermessageDeflateDecompressor: Inflater {
     public var maxWindowBits:  Int32
 
     // The zlib stream
-    public var stream: z_stream = z_stream()
+    private var stream: z_stream = z_stream()
 
-    public var streamInitialized = false
+    public var initialized = false
 
     public init (noContextTakeOver: Bool = false, maxWindowBits: Int32 = 15) {
         self.noContextTakeOver = noContextTakeOver
@@ -111,7 +115,7 @@ public class PermessageDeflateDecompressor: Inflater {
 
     public func inflatePayload(in buffer: ByteBuffer, allocator: ByteBufferAllocator) -> ByteBuffer {
         // Initialize the inflater as per https://www.zlib.net/zlib_how.html
-        if noContextTakeOver || streamInitialized == false {
+        if noContextTakeOver || initialized == false {
             stream.zalloc = nil
             stream.zfree = nil
             stream.opaque = nil
@@ -119,7 +123,7 @@ public class PermessageDeflateDecompressor: Inflater {
             stream.next_in = nil
             let rc = inflateInit2_(&stream, -self.maxWindowBits, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size))
             precondition(rc == Z_OK, "Unexpected return from zlib init: \(rc)")
-            self.streamInitialized = true
+            self.initialized = true
         }
 
         defer {
@@ -154,6 +158,10 @@ public class PermessageDeflateDecompressor: Inflater {
             outputBuffer.writeBuffer(&partialOutputBuffer)
         } while stream.avail_in > 0
         return outputBuffer
+    }
+
+    public func end() {
+        inflateEnd(&stream)
     }
 }
 
@@ -192,7 +200,7 @@ private extension z_stream {
     private mutating func deflateToBuffer(buffer: inout ByteBuffer, flag: Int32) -> Int32 {
         var rc = Z_OK
 
-        buffer.writeWithUnsafeMutableBytes { outputPtr in
+        buffer.writeWithUnsafeMutableBytes(minimumWritableBytes: 0) { outputPtr in
             let typedOutputPtr = UnsafeMutableBufferPointer(start: outputPtr.baseAddress!.assumingMemoryBound(to: UInt8.self),
                                                             count: outputPtr.count)
             self.avail_out = UInt32(typedOutputPtr.count)
@@ -228,7 +236,7 @@ extension z_stream {
     private mutating func inflateToBuffer(buffer: inout ByteBuffer, flag: Int32) -> Int32 {
         var rc = Z_OK
 
-        buffer.writeWithUnsafeMutableBytes { outputPtr in
+        buffer.writeWithUnsafeMutableBytes(minimumWritableBytes: 0) { outputPtr in
             let typedOutputPtr = UnsafeMutableBufferPointer(start: outputPtr.baseAddress!.assumingMemoryBound(to: UInt8.self),
                                                             count: outputPtr.count)
             self.avail_out = UInt32(typedOutputPtr.count)
