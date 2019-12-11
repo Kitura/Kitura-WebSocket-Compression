@@ -35,11 +35,11 @@ public class PermessageDeflateCompressor: Deflater {
     private var stream: z_stream = z_stream()
 
     // Initialize the z_stream only once if context takeover is enabled
-    public var streamInitialized = false
+    public var initialized = false
 
     public func deflatePayload(in buffer: ByteBuffer, allocator: ByteBufferAllocator, dropFourTrailingOctets: Bool = false) -> ByteBuffer {
         // Initialize the deflater as per https://www.zlib.net/zlib_how.html
-        if noContextTakeOver || streamInitialized == false {
+        if noContextTakeOver || initialized == false {
             stream.zalloc = nil
             stream.zfree = nil
             stream.opaque = nil
@@ -49,7 +49,7 @@ public class PermessageDeflateCompressor: Deflater {
             let rc = deflateInit2_(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, -self.maxWindowBits, 8,
                                    Z_DEFAULT_STRATEGY, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size))
             precondition(rc == Z_OK, "Unexpected return from zlib init: \(rc)")
-            self.streamInitialized = true
+            self.initialized = true
         }
 
         defer {
@@ -106,7 +106,7 @@ public class PermessageDeflateDecompressor: Inflater {
     // The zlib stream
     private var stream: z_stream = z_stream()
 
-    public var streamInitialized = false
+    public var initialized = false
 
     public init (noContextTakeOver: Bool = false, maxWindowBits: Int32 = 15) {
         self.noContextTakeOver = noContextTakeOver
@@ -115,7 +115,7 @@ public class PermessageDeflateDecompressor: Inflater {
 
     public func inflatePayload(in buffer: ByteBuffer, allocator: ByteBufferAllocator) -> ByteBuffer {
         // Initialize the inflater as per https://www.zlib.net/zlib_how.html
-        if noContextTakeOver || streamInitialized == false {
+        if noContextTakeOver || initialized == false {
             stream.zalloc = nil
             stream.zfree = nil
             stream.opaque = nil
@@ -123,7 +123,7 @@ public class PermessageDeflateDecompressor: Inflater {
             stream.next_in = nil
             let rc = inflateInit2_(&stream, -self.maxWindowBits, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size))
             precondition(rc == Z_OK, "Unexpected return from zlib init: \(rc)")
-            self.streamInitialized = true
+            self.initialized = true
         }
 
         defer {

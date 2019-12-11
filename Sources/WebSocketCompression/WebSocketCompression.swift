@@ -25,8 +25,8 @@ public protocol Deflater {
     /// If compression context is saved, how long is the compression history window?
     var maxWindowBits: Int32 { get }
 
-    /// This is to make sure we initialize the underlying z_stream only once if context takeover is enabled
-    var streamInitialized: Bool { get set }
+    /// Indicates if the deflater is initialized 
+    var initialized: Bool { get set }
 
     /// Deflate data in the input ByteBuffer and return the compressed data in a new ByteBuffer
     func deflatePayload(in buffer: ByteBuffer, allocator: ByteBufferAllocator, dropFourTrailingOctets: Bool) -> ByteBuffer
@@ -43,8 +43,8 @@ public protocol Inflater {
     /// If compression context is saved, how long is the compression history window?
     var maxWindowBits: Int32 { get }
 
-    /// This is to make sure we initialize the z_stream only once if context takeover is enabled
-    var streamInitialized: Bool { get set }
+    /// Indicates if the inflater is initialized 
+    var initialized: Bool { get set }
 
     /// Inflate data in the input ByteBuffer and return the decompressed data in a new ByteBuffer
     func inflatePayload(in buffer: ByteBuffer, allocator: ByteBufferAllocator) -> ByteBuffer
