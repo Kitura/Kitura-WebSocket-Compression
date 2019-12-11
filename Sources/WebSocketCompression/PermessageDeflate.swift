@@ -32,7 +32,7 @@ public class PermessageDeflateCompressor: Deflater {
     }
 
     // The zlib stream
-    public var stream: z_stream = z_stream()
+    private var stream: z_stream = z_stream()
 
     // Initialize the z_stream only once if context takeover is enabled
     public var streamInitialized = false
@@ -104,7 +104,7 @@ public class PermessageDeflateDecompressor: Inflater {
     public var maxWindowBits:  Int32
 
     // The zlib stream
-    public var stream: z_stream = z_stream()
+    private var stream: z_stream = z_stream()
 
     public var streamInitialized = false
 
